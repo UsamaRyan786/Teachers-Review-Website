@@ -44,6 +44,23 @@ const slugify = (text) =>
 
 const cleanText = (text) => text.replace(/\s+/g, ' ').trim();
 
+const resolveImageUrl = (raw) => {
+  if (!raw || raw.startsWith('data:')) return '';
+  if (raw.startsWith('http')) return raw;
+  return `https://ucp.edu.pk${raw.startsWith('/') ? '' : '/'}${raw}`;
+};
+
+const extractMemberImage = ($, el) => {
+  const img = $(el).find('.item-thumbnail img').first();
+  const raw =
+    img.attr('data-lazy-src') ||
+    img.attr('data-src') ||
+    img.attr('src') ||
+    $(el).find('.item-thumbnail noscript img').attr('src') ||
+    '';
+  return resolveImageUrl(raw);
+};
+
 const isDepartmentHeader = (text) => {
   const lower = text.toLowerCase();
   return lower.startsWith('department of') || (lower.includes('department of') && text.length < 80);
@@ -72,6 +89,7 @@ export const parseTeachersFromHtml = (html, faculty, sourceUrl) => {
     const name = cleanText($(el).find('h3.item-title, h3').first().text());
     const designation = cleanText($(el).find('h4.small-text, h4').first().text());
     const profileUrl = $(el).find('h3 a, .item-thumbnail a').first().attr('href') || '';
+    const imageUrl = extractMemberImage($, el);
     const deptText = cleanText($(el).find('p').first().text());
 
     let department = currentDepartment;
@@ -88,6 +106,7 @@ export const parseTeachersFromHtml = (html, faculty, sourceUrl) => {
       designation: designation || 'Faculty Member',
       department,
       faculty,
+      imageUrl,
       sourceUrl: profileUrl || sourceUrl,
       slug: slugify(`${name}-${faculty}`),
     });

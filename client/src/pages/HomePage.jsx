@@ -1,8 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { api } from '../api';
 import TeacherCard from '../components/TeacherCard';
 import TeacherSearch from '../components/TeacherSearch';
 import SkeletonCard from '../components/SkeletonCard';
+import PageBanner from '../components/PageBanner';
+import { groupTeachersByDepartment, groupTeachersByFaculty } from '../utils/groupTeachers';
 
 export default function HomePage() {
   const [teachers, setTeachers] = useState([]);
@@ -85,34 +87,45 @@ export default function HomePage() {
     setFilters({ search: '', faculty: '', department: '', sort: 'name' });
   };
 
+  const groupedSections = useMemo(() => {
+    if (filters.search || filters.department) {
+      return [{ title: null, teachers }];
+    }
+    if (filters.faculty) {
+      return groupTeachersByDepartment(teachers).map(([title, items]) => ({ title, teachers: items }));
+    }
+    return groupTeachersByFaculty(teachers).map(([title, items]) => ({ title, teachers: items }));
+  }, [teachers, filters.search, filters.faculty, filters.department]);
+
+  const pageTitle = filters.faculty || 'Faculty Members';
+
   return (
     <>
-      <section className="hero">
-        <div className="container hero-content">
-          <span className="hero-badge">University of Central Punjab</span>
-          <h2>Honest Student Reviews for UCP Faculty</h2>
-          <p>
-            Browse teachers imported from the official UCP website, read peer reviews, and share
-            your own experience to help fellow students choose the right courses.
-          </p>
-          <div className="stats-row">
-            <div className="stat-item stat-animate">
-              <div className="stat-value">{stats.teacherCount}</div>
-              <div className="stat-label">Teachers Listed</div>
-            </div>
-            <div className="stat-item stat-animate" style={{ animationDelay: '0.1s' }}>
-              <div className="stat-value">{stats.reviewCount}</div>
-              <div className="stat-label">Student Reviews</div>
-            </div>
-            <div className="stat-item stat-animate" style={{ animationDelay: '0.2s' }}>
-              <div className="stat-value">{faculties.length}</div>
-              <div className="stat-label">Faculties</div>
-            </div>
+      <PageBanner
+        title={pageTitle}
+        breadcrumbs={[
+          { label: 'Home', to: '/' },
+          { label: 'Teacher Reviews', to: '/' },
+          { label: pageTitle },
+        ]}
+      />
+
+      <div className="container page-content">
+        <div className="stats-strip">
+          <div className="stat-item">
+            <strong>{stats.teacherCount}</strong>
+            <span>Teachers</span>
+          </div>
+          <div className="stat-item">
+            <strong>{stats.reviewCount}</strong>
+            <span>Reviews</span>
+          </div>
+          <div className="stat-item">
+            <strong>{faculties.length}</strong>
+            <span>Faculties</span>
           </div>
         </div>
-      </section>
 
-      <div className="container">
         <section className="filters-section">
           <div className="filters-card filters-card-extended">
             <div className="filter-group filter-group-search">
@@ -146,6 +159,7 @@ export default function HomePage() {
                 id="department"
                 value={filters.department}
                 onChange={(e) => setFilters((prev) => ({ ...prev, department: e.target.value }))}
+                disabled={!filters.faculty && departments.length === 0}
               >
                 <option value="">All Departments</option>
                 {departments.map((d) => (
@@ -172,7 +186,11 @@ export default function HomePage() {
 
         <div className="sync-bar">
           {syncMsg && <span className="sync-message">{syncMsg}</span>}
-          <button className={`btn btn-outline ${syncing ? 'btn-loading' : ''}`} onClick={handleSync} disabled={syncing}>
+          <button
+            className={`btn btn-outline ${syncing ? 'btn-loading' : ''}`}
+            onClick={handleSync}
+            disabled={syncing}
+          >
             {syncing ? 'Syncing from UCP...' : '↻ Refresh UCP Data'}
           </button>
         </div>
@@ -196,14 +214,13 @@ export default function HomePage() {
         </div>
 
         {loading ? (
-          <div className="teachers-grid">
-            {Array.from({ length: 6 }).map((_, i) => (
+          <div className="members-grid">
+            {Array.from({ length: 8 }).map((_, i) => (
               <SkeletonCard key={i} />
             ))}
           </div>
         ) : teachers.length === 0 ? (
           <div className="empty-state empty-state-animate">
-            <div className="empty-icon">🔍</div>
             <h3>No teachers found</h3>
             <p>
               {filters.search || filters.department
@@ -221,9 +238,24 @@ export default function HomePage() {
             )}
           </div>
         ) : (
-          <div className={`teachers-grid ${searching ? 'grid-updating' : ''}`}>
-            {teachers.map((teacher, index) => (
-              <TeacherCard key={teacher._id} teacher={teacher} index={index} />
+          <div className={searching ? 'grid-updating' : ''}>
+            {groupedSections.map((section) => (
+              <section key={section.title || 'all'} className="faculty-section">
+                {section.title && (
+                  <h3 className="department-heading">
+                    {section.title.startsWith('Department') || section.title.startsWith('Faculty')
+                      ? section.title
+                      : filters.faculty
+                        ? `Department of ${section.title}`
+                        : section.title}
+                  </h3>
+                )}
+                <div className="members-grid">
+                  {section.teachers.map((teacher, index) => (
+                    <TeacherCard key={teacher._id} teacher={teacher} index={index} />
+                  ))}
+                </div>
+              </section>
             ))}
           </div>
         )}

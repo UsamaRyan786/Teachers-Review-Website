@@ -1,15 +1,14 @@
 export default function SkeletonCard() {
   return (
-    <div className="teacher-card skeleton-card" aria-hidden="true">
-      <div className="teacher-card-header">
-        <div className="skeleton skeleton-avatar" />
-        <div className="skeleton-text-group">
+    <div className="member-item skeleton-card" aria-hidden="true">
+      <div className="member-item-inner">
+        <div className="skeleton skeleton-photo" />
+        <div className="item-content">
           <div className="skeleton skeleton-title" />
           <div className="skeleton skeleton-subtitle" />
         </div>
+        <div className="skeleton skeleton-footer" />
       </div>
-      <div className="skeleton skeleton-tag" />
-      <div className="skeleton skeleton-footer" />
     </div>
   );
 }

@@ -88,7 +88,7 @@ router.get('/suggestions', async (req, res) => {
     if (department) filter.department = department;
 
     const teachers = await Teacher.find(filter)
-      .select('name department faculty designation averageRating reviewCount')
+      .select('name department faculty designation averageRating reviewCount slug')
       .sort({ name: 1 })
       .limit(Math.min(Number(limit) || 8, 12))
       .lean();
@@ -143,7 +143,17 @@ router.get('/stats', async (_req, res) => {
 
 router.get('/:id', async (req, res) => {
   try {
-    const teacher = await Teacher.findById(req.params.id).lean();
+    const { id } = req.params;
+    let teacher = null;
+
+    if (/^[a-f\d]{24}$/i.test(id)) {
+      teacher = await Teacher.findById(id).lean();
+    }
+
+    if (!teacher) {
+      teacher = await Teacher.findOne({ slug: id }).lean();
+    }
+
     if (!teacher) return res.status(404).json({ message: 'Teacher not found' });
     res.json(teacher);
   } catch (err) {

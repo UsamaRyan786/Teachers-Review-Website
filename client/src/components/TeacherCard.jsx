@@ -1,45 +1,45 @@
 import { Link } from 'react-router-dom';
 import StarRating from './StarRating';
-
-const getInitials = (name) => {
-  const parts = name.replace(/^(Dr\.|Prof\.|Mr\.|Ms\.|Mrs\.|Engr\.)\s*/i, '').split(' ');
-  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  return name.slice(0, 2).toUpperCase();
-};
+import TeacherAvatar from './TeacherAvatar';
+import { getTeacherPath } from '../utils/teacherPath';
 
 export default function TeacherCard({ teacher, index = 0 }) {
   return (
     <Link
-      to={`/teacher/${teacher._id}`}
-      className="teacher-card-link"
-      style={{ '--card-delay': `${Math.min(index * 0.05, 0.4)}s` }}
+      to={getTeacherPath(teacher)}
+      className="member-item-link"
+      style={{ '--card-delay': `${Math.min(index * 0.04, 0.4)}s` }}
       aria-label={`View ${teacher.name} profile and reviews`}
     >
-      <article className="teacher-card">
-        <div className="teacher-card-header">
-          <div className="teacher-avatar">{getInitials(teacher.name)}</div>
-          <div className="teacher-info">
-            <h3>{teacher.name}</h3>
-            <p className="teacher-designation">{teacher.designation}</p>
+      <article className="member-item">
+        <div className="member-item-inner">
+          <div className="item-thumbnail">
+            <TeacherAvatar
+              name={teacher.name}
+              imageUrl={teacher.imageUrl}
+              className="member-photo"
+              alt={teacher.name}
+            />
           </div>
-        </div>
-        <div className="teacher-meta">
-          <span className="meta-tag">🏛 {teacher.faculty}</span>
-          {teacher.department !== 'General' && (
-            <span className="meta-tag">📚 {teacher.department}</span>
-          )}
-        </div>
-        <div className="teacher-card-footer">
-          <div className="rating-display">
+          <div className="item-content">
+            <h3 className="item-title">{teacher.name}</h3>
+            <h4 className="small-text">{teacher.designation}</h4>
+            {teacher.department !== 'General' && (
+              <p className="member-department">{teacher.department}</p>
+            )}
+          </div>
+          <div className="member-reviews">
             <StarRating rating={teacher.averageRating || 0} />
-            <span className="rating-value">
-              {teacher.reviewCount > 0 ? teacher.averageRating.toFixed(1) : '—'}
-            </span>
-            <span className="review-count">
-              ({teacher.reviewCount} review{teacher.reviewCount !== 1 ? 's' : ''})
+            <span className="member-rating-text">
+              {teacher.reviewCount > 0 ? teacher.averageRating.toFixed(1) : 'No ratings yet'}
+              {teacher.reviewCount > 0 && (
+                <span className="review-count">
+                  {' '}
+                  · {teacher.reviewCount} review{teacher.reviewCount !== 1 ? 's' : ''}
+                </span>
+              )}
             </span>
           </div>
-          <span className="view-link">View & Review →</span>
         </div>
       </article>
     </Link>

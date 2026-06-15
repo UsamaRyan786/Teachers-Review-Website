@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api';
+import { getTeacherPath } from '../utils/teacherPath';
 
 const highlightMatch = (text, query) => {
   if (!query.trim()) return text;
@@ -69,7 +70,7 @@ export default function TeacherSearch({ value, onChange, faculty, department, se
   const selectSuggestion = (teacher) => {
     onChange(teacher.name);
     setOpen(false);
-    navigate(`/teacher/${teacher._id}`);
+    navigate(getTeacherPath(teacher));
   };
 
   const handleKeyDown = (e) => {
