@@ -1,22 +1,28 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import connectDB from './config/db.js';
 import teacherRoutes from './routes/teachers.js';
 import reviewRoutes from './routes/reviews.js';
+import imageRoutes from './routes/images.js';
 import Teacher from './models/Teacher.js';
 import { scrapeAllTeachers } from './utils/ucpScraper.js';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173' }));
 app.use(express.json());
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', message: 'UCP Teacher Reviews API' });
 });
 
+app.use('/api/images', imageRoutes);
 app.use('/api/teachers', teacherRoutes);
 app.use('/api/reviews', reviewRoutes);
 

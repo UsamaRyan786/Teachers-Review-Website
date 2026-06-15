@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { getTeacherImageSrc } from '../utils/teacherImage';
 
 export const getInitials = (name) => {
   const parts = name.replace(/^(Dr\.|Prof\.|Mr\.|Ms\.|Mrs\.|Engr\.)\s*/i, '').split(' ');
@@ -8,15 +9,18 @@ export const getInitials = (name) => {
 
 export default function TeacherAvatar({ name, imageUrl, className = '', alt }) {
   const [failed, setFailed] = useState(false);
-  const showImage = Boolean(imageUrl) && !failed;
+  const src = getTeacherImageSrc(imageUrl);
+  const showImage = Boolean(src) && !failed;
 
   if (showImage) {
     return (
       <img
-        src={imageUrl}
+        src={src}
         alt={alt || name}
         className={className}
         loading="lazy"
+        decoding="async"
+        referrerPolicy="no-referrer"
         onError={() => setFailed(true)}
       />
     );

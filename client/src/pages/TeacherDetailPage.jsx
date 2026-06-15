@@ -7,6 +7,7 @@ import ReviewList from '../components/ReviewList';
 import SkeletonCard from '../components/SkeletonCard';
 import PageBanner from '../components/PageBanner';
 import TeacherAvatar from '../components/TeacherAvatar';
+import TeacherProfile from '../components/TeacherProfile';
 
 export default function TeacherDetailPage() {
   const { id } = useParams();
@@ -18,10 +19,8 @@ export default function TeacherDetailPage() {
   const loadTeacher = useCallback(async () => {
     setLoading(true);
     try {
-      const [teacherData, reviewsData] = await Promise.all([
-        api.getTeacher(id),
-        api.getReviews(id),
-      ]);
+      const teacherData = await api.getTeacher(id);
+      const reviewsData = await api.getReviews(teacherData._id);
       setTeacher(teacherData);
       setReviews(reviewsData);
       setError('');
@@ -37,10 +36,8 @@ export default function TeacherDetailPage() {
   }, [loadTeacher]);
 
   const handleReviewSubmitted = async () => {
-    const [teacherData, reviewsData] = await Promise.all([
-      api.getTeacher(id),
-      api.getReviews(id),
-    ]);
+    const teacherData = await api.getTeacher(id);
+    const reviewsData = await api.getReviews(teacherData._id);
     setTeacher(teacherData);
     setReviews(reviewsData);
   };
@@ -121,6 +118,12 @@ export default function TeacherDetailPage() {
               {teacher.department !== 'General' && (
                 <span className="meta-tag">{teacher.department}</span>
               )}
+              {teacher.email && (
+                <a href={`mailto:${teacher.email}`} className="meta-tag meta-link">
+                  ✉ {teacher.email}
+                </a>
+              )}
+              {teacher.extension && <span className="meta-tag">Ext: {teacher.extension}</span>}
               {teacher.sourceUrl && (
                 <a
                   href={teacher.sourceUrl}
@@ -143,6 +146,8 @@ export default function TeacherDetailPage() {
             </p>
           </div>
         </header>
+
+        <TeacherProfile teacher={teacher} />
 
         <div className="detail-grid">
           <div className="detail-reviews">

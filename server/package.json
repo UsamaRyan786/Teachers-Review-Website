@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "node --watch server.js",
     "start": "node server.js",
-    "scrape": "node scripts/scrapeTeachers.js"
+    "scrape": "node scripts/scrapeTeachers.js",
+    "scrape:profiles": "node scripts/scrapeProfiles.js",
+    "sync:images": "node scripts/syncImages.js"
   },
   "dependencies": {
     "cheerio": "^1.0.0",

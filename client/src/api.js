@@ -65,4 +65,15 @@ export const api = {
     if (!res.ok) throw new Error(json.message || 'Scrape failed');
     return json;
   },
+
+  async scrapeProfiles(limit = 25) {
+    const res = await fetch(`${API_BASE}/teachers/scrape-profiles`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ limit, onlyMissing: true }),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.message || 'Profile sync failed');
+    return json;
+  },
 };

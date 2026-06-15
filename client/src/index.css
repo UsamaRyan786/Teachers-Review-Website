@@ -937,6 +937,11 @@ img {
   background: var(--ucp-navy);
 }
 
+.member-photo {
+  display: block;
+  min-height: 100%;
+}
+
 .member-photo,
 .teacher-avatar-fallback {
   width: 100%;
@@ -1303,6 +1308,105 @@ img {
   gap: 2rem;
 }
 
+/* ── UCP profile sections on teacher detail ── */
+
+.ucp-profile {
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  padding: 1.5rem 1.75rem;
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.ucp-profile h2 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--ucp-navy);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 3px solid var(--ucp-red);
+}
+
+.ucp-profile-empty p {
+  color: var(--gray-600);
+  line-height: 1.7;
+}
+
+.profile-contact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.profile-contact-item {
+  font-size: 0.9rem;
+  color: var(--ucp-navy);
+  font-weight: 600;
+}
+
+.profile-contact a.profile-contact-item:hover {
+  color: var(--ucp-red);
+}
+
+.profile-section {
+  margin-top: 1.5rem;
+}
+
+.profile-section-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ucp-red);
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.profile-summary p {
+  color: var(--gray-700);
+  line-height: 1.75;
+  margin-bottom: 0.85rem;
+  text-align: justify;
+}
+
+.profile-table-wrap {
+  overflow-x: auto;
+}
+
+.profile-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.profile-table thead {
+  background: var(--ucp-red);
+  color: #fff;
+}
+
+.profile-table th,
+.profile-table td {
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px dashed var(--gray-200);
+  text-align: left;
+  vertical-align: top;
+}
+
+.profile-table tbody tr:nth-child(even) td {
+  background: var(--gray-50);
+}
+
+.profile-publications {
+  padding-left: 1.25rem;
+  color: var(--gray-700);
+  line-height: 1.7;
+}
+
+.profile-publications li {
+  margin-bottom: 0.75rem;
+}
+
 @media (min-width: 992px) {
   .detail-grid {
     grid-template-columns: 1fr 380px;
@@ -1552,6 +1656,8 @@ img {
   display: flex;
   justify-content: flex-end;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
   margin-bottom: 1rem;
 }
 

@@ -14,6 +14,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [searching, setSearching] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [syncingProfiles, setSyncingProfiles] = useState(false);
   const [syncMsg, setSyncMsg] = useState('');
   const [filters, setFilters] = useState({
     search: '',
@@ -77,6 +78,20 @@ export default function HomePage() {
       setSyncMsg(err.message);
     } finally {
       setSyncing(false);
+    }
+  };
+
+  const handleSyncProfiles = async () => {
+    setSyncingProfiles(true);
+    setSyncMsg('');
+    try {
+      const result = await api.scrapeProfiles(25);
+      setSyncMsg(result.message);
+      await loadMeta();
+    } catch (err) {
+      setSyncMsg(err.message);
+    } finally {
+      setSyncingProfiles(false);
     }
   };
 
@@ -189,9 +204,16 @@ export default function HomePage() {
           <button
             className={`btn btn-outline ${syncing ? 'btn-loading' : ''}`}
             onClick={handleSync}
-            disabled={syncing}
+            disabled={syncing || syncingProfiles}
           >
             {syncing ? 'Syncing from UCP...' : '↻ Refresh UCP Data'}
+          </button>
+          <button
+            className={`btn btn-outline ${syncingProfiles ? 'btn-loading' : ''}`}
+            onClick={handleSyncProfiles}
+            disabled={syncing || syncingProfiles}
+          >
+            {syncingProfiles ? 'Syncing profiles...' : '↻ Sync UCP Profiles (25)'}
           </button>
         </div>
 

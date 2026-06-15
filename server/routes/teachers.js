@@ -2,8 +2,35 @@ import express from 'express';
 import Teacher from '../models/Teacher.js';
 import Review from '../models/Review.js';
 import { scrapeAllTeachers } from '../utils/ucpScraper.js';
+import { enrichTeacherIfNeeded } from '../utils/enrichProfiles.js';
+import { downloadTeacherImage } from '../utils/imageStorage.js';
 
 const router = express.Router();
+
+const listingFields = (teacher) => {
+  const fields = {
+    name: teacher.name,
+    designation: teacher.designation,
+    department: teacher.department,
+    faculty: teacher.faculty,
+    sourceUrl: teacher.sourceUrl,
+    slug: teacher.slug,
+  };
+  if (teacher.imageUrl) fields.imageUrl = teacher.imageUrl;
+  return fields;
+};
+
+const upsertTeacherListing = async (teacher) => {
+  const storedImageUrl = teacher.imageUrl
+    ? await downloadTeacherImage(teacher.imageUrl, teacher.slug)
+    : '';
+
+  await Teacher.findOneAndUpdate(
+    { slug: teacher.slug },
+    { $set: { ...listingFields(teacher), ...(storedImageUrl ? { imageUrl: storedImageUrl } : {}) } },
+    { upsert: true, setDefaultsOnInsert: true }
+  );
+};
 
 const updateTeacherStats = async (teacherId) => {
   const stats = await Review.aggregate([
@@ -147,15 +174,17 @@ router.get('/:id', async (req, res) => {
     let teacher = null;
 
     if (/^[a-f\d]{24}$/i.test(id)) {
-      teacher = await Teacher.findById(id).lean();
+      teacher = await Teacher.findById(id);
     }
 
     if (!teacher) {
-      teacher = await Teacher.findOne({ slug: id }).lean();
+      teacher = await Teacher.findOne({ slug: id });
     }
 
     if (!teacher) return res.status(404).json({ message: 'Teacher not found' });
-    res.json(teacher);
+
+    teacher = await enrichTeacherIfNeeded(teacher);
+    res.json(teacher.toObject());
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -167,11 +196,58 @@ router.post('/scrape', async (_req, res) => {
     let count = 0;
 
     for (const teacher of scraped) {
-      await Teacher.findOneAndUpdate({ slug: teacher.slug }, { $set: teacher }, { upsert: true });
+      await upsertTeacherListing(teacher);
       count++;
     }
 
     res.json({ message: `Successfully imported ${count} teachers from UCP website`, count });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.post('/scrape-profiles', async (req, res) => {
+  try {
+    const limit = Number(req.body?.limit) || 0;
+    const onlyMissing = req.body?.onlyMissing !== false;
+
+    const filter = { sourceUrl: { $ne: '' } };
+    if (onlyMissing) filter.profileScrapedAt = { $exists: false };
+
+    const pending = await Teacher.countDocuments(filter);
+    if (pending === 0) {
+      return res.json({ message: 'All teacher profiles are already synced from UCP', total: 0, updated: 0, failed: 0 });
+    }
+
+    const batchSize = limit > 0 ? limit : Math.min(pending, 25);
+    const teachers = await Teacher.find(filter).limit(batchSize);
+
+    let updated = 0;
+    let failed = 0;
+
+    for (const teacher of teachers) {
+      try {
+        const enriched = await enrichTeacherIfNeeded(teacher);
+        if (enriched?.profileScrapedAt) updated++;
+        else failed++;
+        await new Promise((r) => setTimeout(r, 300));
+      } catch {
+        failed++;
+      }
+    }
+
+    const remaining = await Teacher.countDocuments({
+      sourceUrl: { $ne: '' },
+      profileScrapedAt: { $exists: false },
+    });
+
+    res.json({
+      message: `Synced ${updated} teacher profiles from UCP (${remaining} remaining)`,
+      total: teachers.length,
+      updated,
+      failed,
+      remaining,
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
