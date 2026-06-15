@@ -1,4 +1,5 @@
 import express from 'express';
+import mongoose from 'mongoose';
 import Teacher from '../models/Teacher.js';
 import Review from '../models/Review.js';
 import { scrapeAllTeachers } from '../utils/ucpScraper.js';
@@ -33,8 +34,10 @@ const upsertTeacherListing = async (teacher) => {
 };
 
 const updateTeacherStats = async (teacherId) => {
+  const id = new mongoose.Types.ObjectId(teacherId);
+
   const stats = await Review.aggregate([
-    { $match: { teacher: teacherId } },
+    { $match: { teacher: id } },
     {
       $group: {
         _id: '$teacher',
@@ -45,12 +48,12 @@ const updateTeacherStats = async (teacherId) => {
   ]);
 
   if (stats.length > 0) {
-    await Teacher.findByIdAndUpdate(teacherId, {
+    await Teacher.findByIdAndUpdate(id, {
       averageRating: Math.round(stats[0].averageRating * 10) / 10,
       reviewCount: stats[0].reviewCount,
     });
   } else {
-    await Teacher.findByIdAndUpdate(teacherId, { averageRating: 0, reviewCount: 0 });
+    await Teacher.findByIdAndUpdate(id, { averageRating: 0, reviewCount: 0 });
   }
 };
 
