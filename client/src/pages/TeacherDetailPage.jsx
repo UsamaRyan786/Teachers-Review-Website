@@ -8,6 +8,7 @@ import SkeletonCard from '../components/SkeletonCard';
 import PageBanner from '../components/PageBanner';
 import TeacherAvatar from '../components/TeacherAvatar';
 import TeacherProfile from '../components/TeacherProfile';
+import usePageTitle from '../hooks/usePageTitle';
 
 export default function TeacherDetailPage() {
   const { id } = useParams();
@@ -34,6 +35,8 @@ export default function TeacherDetailPage() {
   useEffect(() => {
     loadTeacher();
   }, [loadTeacher]);
+
+  usePageTitle(teacher?.name);
 
   const handleReviewSubmitted = async () => {
     const teacherData = await api.getTeacher(id);

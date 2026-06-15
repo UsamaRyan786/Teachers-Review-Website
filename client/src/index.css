@@ -272,6 +272,14 @@ img {
   line-height: 1.2;
 }
 
+.page-banner-subtitle {
+  margin-top: 0.85rem;
+  max-width: 720px;
+  font-size: 1rem;
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.9);
+}
+
 .page-content {
   padding: 2rem 0 3rem;
 }

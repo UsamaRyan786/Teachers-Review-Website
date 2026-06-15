@@ -1,3 +1,5 @@
+import { SITE_TAGLINE } from '../config/site';
+
 export default function Footer() {
   return (
     <footer className="footer">
@@ -8,7 +10,7 @@ export default function Footer() {
             <span>Student Teacher Reviews</span>
           </div>
           <p className="footer-note">
-            Faculty data sourced from{' '}
+            {SITE_TAGLINE}. Faculty data sourced from{' '}
             <a href="https://ucp.edu.pk" target="_blank" rel="noopener noreferrer">
               ucp.edu.pk
             </a>

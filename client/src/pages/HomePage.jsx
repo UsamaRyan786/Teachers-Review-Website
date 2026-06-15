@@ -5,6 +5,8 @@ import TeacherSearch from '../components/TeacherSearch';
 import SkeletonCard from '../components/SkeletonCard';
 import PageBanner from '../components/PageBanner';
 import { groupTeachersByDepartment, groupTeachersByFaculty } from '../utils/groupTeachers';
+import usePageTitle from '../hooks/usePageTitle';
+import { SITE_NAME, SITE_PURPOSE, SITE_TAGLINE } from '../config/site';
 
 export default function HomePage() {
   const [teachers, setTeachers] = useState([]);
@@ -112,16 +114,20 @@ export default function HomePage() {
     return groupTeachersByFaculty(teachers).map(([title, items]) => ({ title, teachers: items }));
   }, [teachers, filters.search, filters.faculty, filters.department]);
 
-  const pageTitle = filters.faculty || 'Faculty Members';
+  const pageTitle = filters.faculty || 'Faculty Directory';
+  const isHome = !filters.faculty && !filters.search && !filters.department;
+
+  usePageTitle(isHome ? '' : pageTitle);
 
   return (
     <>
       <PageBanner
-        title={pageTitle}
+        title={isHome ? SITE_NAME : pageTitle}
+        subtitle={isHome ? `${SITE_TAGLINE}. ${SITE_PURPOSE}` : SITE_TAGLINE}
         breadcrumbs={[
           { label: 'Home', to: '/' },
           { label: 'Teacher Reviews', to: '/' },
-          { label: pageTitle },
+          ...(filters.faculty ? [{ label: pageTitle }] : []),
         ]}
       />
 
