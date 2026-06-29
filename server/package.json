@@ -6,7 +6,9 @@
     "dev": "node --watch server.js",
     "start": "node server.js",
     "scrape": "node scripts/scrapeTeachers.js",
+    "keep:ucp": "node scripts/keepUcpOnly.js",
     "scrape:profiles": "node scripts/scrapeProfiles.js",
+    "fix:emails": "node scripts/fixBadEmails.js",
     "sync:images": "node scripts/syncImages.js"
   },
   "dependencies": {
@@ -16,6 +18,8 @@
     "express": "^4.21.2",
     "mongodb-memory-server": "^10.4.3",
     "mongoose": "^8.9.3",
-    "node-fetch": "^3.3.2"
+    "node-cron": "^4.2.1",
+    "node-fetch": "^3.3.2",
+    "nodemailer": "^9.0.0"
   }
 }

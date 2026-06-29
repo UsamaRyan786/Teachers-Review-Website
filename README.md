@@ -102,13 +102,52 @@ Default values in `.env`:
 PORT=5000
 MONGODB_URI=mongodb://127.0.0.1:27017/ucp-teacher-reviews
 CLIENT_URL=http://localhost:5173
+
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=usamarayan80@gmail.com
+SMTP_PASS=your_gmail_app_password_here
+SMTP_FROM=usamarayan80@gmail.com
 ```
 
 | Variable | Description |
 |----------|-------------|
 | `PORT` | API server port (default: `5000`) |
 | `MONGODB_URI` | MongoDB connection string |
-| `CLIENT_URL` | Frontend URL for CORS (default: `http://localhost:5173`) |
+| `CLIENT_URL` | Frontend URL for CORS and email links |
+| `SMTP_HOST` | Mail server host (Gmail: `smtp.gmail.com`) |
+| `SMTP_PORT` | Mail server port (`587` for Gmail TLS) |
+| `SMTP_USER` | Gmail address used to send notifications |
+| `SMTP_PASS` | Gmail **App Password** (not your regular Gmail password) |
+| `SMTP_FROM` | From address shown in emails (usually same as `SMTP_USER`) |
+| `SMTP_FROM_NAME` | Sender display name (e.g. `Usama Ryan - UCP Teacher Reviews`) |
+| `SYNC_ENABLED` | Set to `false` to disable the daily auto-sync (default: enabled) |
+| `SYNC_CRON` | Cron schedule for daily sync (default: `0 1 * * *` = 1:00 AM) |
+| `SYNC_TIMEZONE` | Timezone for the scheduler (default: `Asia/Karachi`) |
+| `SYNC_CONCURRENCY` | Parallel profile requests during sync (default: `8`) |
+
+### Email notifications (optional)
+
+When a student submits a review, the app can email the teacher at their UCP address with the review details. Emails are sent **from** `usamarayan80@gmail.com` (or whatever you set in `SMTP_USER`).
+
+**Gmail setup (required for sending):**
+
+1. Turn on [2-Step Verification](https://myaccount.google.com/security) for `usamarayan80@gmail.com`
+2. Create an [App Password](https://myaccount.google.com/apppasswords) (Google Account → Security → App passwords)
+3. Put that 16-character password in `server/.env` as `SMTP_PASS`
+4. Restart the API server
+
+Teachers must have an email on their profile (imported from UCP via **Sync UCP Profiles**). If a teacher has no email, the review is still saved but no email is sent.
+
+**Without `SMTP_PASS`:** reviews work normally; email is skipped and a warning is logged in the server console.
+
+**If emails land in spam:**
+
+1. **Mark as “Not spam”** once in the teacher’s inbox — Gmail/Outlook learn from this.
+2. **Add `usamarayan80@gmail.com` to contacts** on the receiving account.
+3. **Avoid localhost links in emails** — while developing locally, profile links are omitted from emails on purpose (localhost URLs trigger spam filters). For production, set `CLIENT_URL` to your real public domain (e.g. `https://your-domain.com`).
+4. Emails are sent as plain, professional notifications (not marketing-style HTML) with proper `Auto-Submitted` headers.
+5. For best deliverability long-term, use a custom domain with SPF/DKIM (e.g. SendGrid, Resend, or Google Workspace) instead of personal Gmail SMTP.
 
 ### 4. Start MongoDB
 
@@ -170,9 +209,27 @@ npm run sync:images
 npm run scrape:profiles
 ```
 
-`scrape:profiles` can take several minutes (600+ teachers).
+`scrape:profiles` syncs all remaining profiles in parallel (typically a few minutes for 600+ teachers).
 
-You can also use the **Refresh UCP Data** and **Sync UCP Profiles** buttons on the home page while the app is running.
+You can also use the **Refresh UCP Data** and **Sync All UCP Profiles** buttons on the home page while the app is running. Profile sync runs in the background and shows live progress.
+
+### Automatic daily sync
+
+While the API server is running, it automatically syncs from UCP every day at **1:00 AM** (Pakistan time by default):
+
+1. Refreshes the teacher listing from UCP
+2. Syncs missing and stale profiles (older than 30 days)
+
+Configure in `server/.env`:
+
+```env
+SYNC_ENABLED=true
+SYNC_CRON=0 1 * * *
+SYNC_TIMEZONE=Asia/Karachi
+SYNC_CONCURRENCY=8
+```
+
+The server must stay running overnight for the scheduler to fire (or use a process manager like PM2 in production).
 
 ### Fix rating counts (if needed)
 
@@ -193,7 +250,8 @@ Base URL: `http://localhost:5000/api`
 | `/teachers` | GET | List/search teachers |
 | `/teachers/:id` | GET | Teacher by ID or slug |
 | `/teachers/scrape` | POST | Re-import teachers from UCP |
-| `/teachers/scrape-profiles` | POST | Sync profile data (batch) |
+| `/teachers/scrape-profiles` | POST | Sync all missing profiles (background job) |
+| `/teachers/scrape-profiles/status` | GET | Profile sync progress |
 | `/reviews` | POST | Submit a review |
 | `/reviews/teacher/:teacherId` | GET | Reviews for a teacher |
 | `/images/proxy` | GET | Proxy UCP images |

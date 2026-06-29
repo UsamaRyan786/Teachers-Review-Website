@@ -1,6 +1,8 @@
 import Teacher from '../models/Teacher.js';
 import { scrapeTeacherProfile } from './profileScraper.js';
 import { downloadTeacherImage } from './imageStorage.js';
+import { mergeProfileIntoTeacher } from './profileMerge.js';
+import { runProfileSync, getProfileSyncStatus } from './profileSync.js';
 
 export const storeTeacherImage = async (imageUrl, slug) => {
   if (!imageUrl || !slug) return imageUrl || '';
@@ -10,26 +12,12 @@ export const storeTeacherImage = async (imageUrl, slug) => {
 const needsProfileRefresh = (teacher) => {
   if (!teacher.sourceUrl) return false;
   if (!teacher.profileScrapedAt) return true;
+  if (teacher.email && !/@ucp\.edu\.pk$/i.test(teacher.email)) return true;
   const ageMs = Date.now() - new Date(teacher.profileScrapedAt).getTime();
   return ageMs > 30 * 24 * 60 * 60 * 1000;
 };
 
-export const mergeProfileIntoTeacher = (teacher, profile) => {
-  if (!profile) return teacher;
-
-  return {
-    ...teacher,
-    imageUrl: profile.imageUrl || teacher.imageUrl,
-    email: profile.email || teacher.email,
-    extension: profile.extension || teacher.extension,
-    profileSummary: profile.profileSummary || teacher.profileSummary,
-    qualifications: profile.qualifications?.length ? profile.qualifications : teacher.qualifications,
-    experience: profile.experience?.length ? profile.experience : teacher.experience,
-    publications: profile.publications?.length ? profile.publications : teacher.publications,
-    designation: profile.designation || teacher.designation,
-    profileScrapedAt: new Date(),
-  };
-};
+export { mergeProfileIntoTeacher } from './profileMerge.js';
 
 export const enrichTeacherProfile = async (teacherDoc) => {
   if (!teacherDoc?.sourceUrl) return teacherDoc;
@@ -69,46 +57,29 @@ export const enrichTeacherIfNeeded = async (teacher) => {
   return enrichTeacherProfile(teacher);
 };
 
-export const enrichAllTeacherProfiles = async ({ limit = 0, delayMs = 350, onProgress } = {}) => {
-  const query = { sourceUrl: { $ne: '' } };
-  let teachers = await Teacher.find(query).select('_id name slug sourceUrl profileScrapedAt');
+export const enrichAllTeacherProfiles = async (options = {}) => {
+  const { onProgress, ...syncOptions } = options;
 
-  if (limit > 0) teachers = teachers.slice(0, limit);
-
-  let updated = 0;
-  let failed = 0;
-
-  for (let i = 0; i < teachers.length; i++) {
-    const teacher = teachers[i];
-    try {
-      const profile = await scrapeTeacherProfile(teacher.sourceUrl);
-      if (profile) {
-        const merged = mergeProfileIntoTeacher(teacher.toObject(), profile);
-        const storedImageUrl = await downloadTeacherImage(merged.imageUrl, teacher.slug);
-        await Teacher.findByIdAndUpdate(teacher._id, {
-          $set: {
-            imageUrl: storedImageUrl,
-            email: merged.email,
-            extension: merged.extension,
-            profileSummary: merged.profileSummary,
-            qualifications: merged.qualifications,
-            experience: merged.experience,
-            publications: merged.publications,
-            designation: merged.designation,
-            profileScrapedAt: merged.profileScrapedAt,
-          },
+  if (onProgress) {
+    const interval = setInterval(() => {
+      const status = getProfileSyncStatus();
+      if (status.running || status.processed > 0) {
+        onProgress({
+          current: status.processed,
+          total: status.total,
+          updated: status.updated,
+          failed: status.failed,
+          name: status.processed > 0 ? '...' : '',
         });
-        updated++;
-      } else {
-        failed++;
       }
-    } catch {
-      failed++;
-    }
+    }, 500);
 
-    if (onProgress) onProgress({ current: i + 1, total: teachers.length, updated, failed, name: teacher.name });
-    if (delayMs > 0 && i < teachers.length - 1) await new Promise((r) => setTimeout(r, delayMs));
+    try {
+      return await runProfileSync({ ...syncOptions, limit: syncOptions.limit || 0, background: false });
+    } finally {
+      clearInterval(interval);
+    }
   }
 
-  return { total: teachers.length, updated, failed };
+  return runProfileSync({ ...syncOptions, limit: syncOptions.limit || 0, background: false });
 };

@@ -2,6 +2,7 @@ import express from 'express';
 import Review from '../models/Review.js';
 import Teacher from '../models/Teacher.js';
 import { updateTeacherStats } from './teachers.js';
+import { sendReviewNotification } from '../utils/email.js';
 
 const router = express.Router();
 
@@ -38,7 +39,12 @@ router.post('/', async (req, res) => {
 
     await updateTeacherStats(teacherId);
 
-    res.status(201).json(review);
+    const emailResult = await sendReviewNotification(teacher, review);
+
+    res.status(201).json({
+      ...review.toObject(),
+      emailNotification: emailResult,
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

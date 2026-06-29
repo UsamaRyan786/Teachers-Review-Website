@@ -8,7 +8,8 @@ import teacherRoutes from './routes/teachers.js';
 import reviewRoutes from './routes/reviews.js';
 import imageRoutes from './routes/images.js';
 import Teacher from './models/Teacher.js';
-import { scrapeAllTeachers } from './utils/ucpScraper.js';
+import { syncTeacherListing } from './utils/ucpSync.js';
+import { startScheduler } from './scheduler.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -20,6 +21,11 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', message: 'UCP Teacher Reviews API' });
+});
+
+app.get('/', (_req, res) => {
+  const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+  res.redirect(clientUrl);
 });
 
 app.use('/api/images', imageRoutes);
@@ -34,12 +40,9 @@ const seedIfEmpty = async () => {
   }
 
   console.log('No teachers found — scraping UCP website...');
-  const teachers = await scrapeAllTeachers();
-
-  if (teachers.length > 0) {
-    await Teacher.insertMany(teachers, { ordered: false }).catch(() => {});
-    console.log(`Seeded ${teachers.length} teachers from UCP`);
-  }
+  await syncTeacherListing();
+  const seededCount = await Teacher.countDocuments();
+  console.log(`Seeded ${seededCount} teachers from UCP`);
 };
 
 const start = async () => {
@@ -48,6 +51,7 @@ const start = async () => {
     await seedIfEmpty();
     app.listen(PORT, () => {
       console.log(`Server running on http://localhost:${PORT}`);
+      startScheduler();
     });
   } catch (err) {
     console.error('Failed to start server:', err.message);

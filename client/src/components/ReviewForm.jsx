@@ -31,7 +31,7 @@ export default function ReviewForm({ teacherId, onReviewSubmitted }) {
 
     setLoading(true);
     try {
-      await api.submitReview({
+      const result = await api.submitReview({
         teacherId,
         studentName: form.studentName,
         course: form.course,
@@ -39,7 +39,15 @@ export default function ReviewForm({ teacherId, onReviewSubmitted }) {
         comment: form.comment,
         wouldRecommend: form.wouldRecommend,
       });
-      setSuccess('Thank you! Your review has been submitted.');
+
+      let successMsg = 'Thank you! Your review has been submitted.';
+      if (result.emailNotification?.sent) {
+        successMsg += ` The teacher has been notified by email.`;
+      } else if (result.emailNotification?.reason === 'no_teacher_email') {
+        successMsg += ` (This teacher has no email on file, so no notification was sent.)`;
+      }
+
+      setSuccess(successMsg);
       setForm({ studentName: '', course: '', rating: 0, comment: '', wouldRecommend: true });
       onReviewSubmitted?.();
     } catch (err) {

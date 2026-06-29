@@ -20,13 +20,31 @@ const extractImage = ($) => {
   return resolveImageUrl(raw);
 };
 
-const extractEmail = ($) => {
-  const mailto = $('a[href^="mailto:"]').first().attr('href');
-  if (mailto) return mailto.replace(/^mailto:/i, '').trim();
+const UCP_EMAIL_RE = /[A-Z0-9._%+-]+@ucp\.edu\.pk/i;
 
-  const memberText = $('.member-item').text();
-  const match = memberText.match(/[A-Z0-9._%+-]+@ucp\.edu\.pk/i);
-  return match ? match[0] : '';
+const isUcpEmail = (email) => Boolean(email && UCP_EMAIL_RE.test(email));
+
+const extractEmail = ($) => {
+  const memberItem = $('.member-item').first();
+
+  const memberMailto = memberItem
+    .find('a[href^="mailto:"]')
+    .map((_, el) => $(el).attr('href')?.replace(/^mailto:/i, '').trim())
+    .get()
+    .find(isUcpEmail);
+  if (memberMailto) return memberMailto;
+
+  const memberMatch = memberItem.text().match(UCP_EMAIL_RE);
+  if (memberMatch) return memberMatch[0];
+
+  const pageUcpMailto = $('a[href^="mailto:"]')
+    .map((_, el) => $(el).attr('href')?.replace(/^mailto:/i, '').trim())
+    .get()
+    .find(isUcpEmail);
+  if (pageUcpMailto) return pageUcpMailto;
+
+  const pageMatch = $('body').text().match(UCP_EMAIL_RE);
+  return pageMatch ? pageMatch[0] : '';
 };
 
 const extractExtension = ($) => {
@@ -94,7 +112,6 @@ const getPanelBody = ($, title) => {
 
 export const parseTeacherProfile = (html, sourceUrl = '') => {
   const $ = cheerio.load(html);
-
   const name = cleanText($('h1').first().text()) || cleanText($('.member-item h3').first().text());
   const designation =
     cleanText($('.member-item h4.small-text').first().text()) ||

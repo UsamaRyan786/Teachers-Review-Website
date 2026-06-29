@@ -85,14 +85,46 @@ export default function HomePage() {
 
   const handleSyncProfiles = async () => {
     setSyncingProfiles(true);
-    setSyncMsg('');
-    try {
-      const result = await api.scrapeProfiles(25);
-      setSyncMsg(result.message);
+    setSyncMsg('Starting profile sync...');
+
+    const pollStatus = async () => {
+      const status = await api.getProfileSyncStatus();
+      if (status.running) {
+        setSyncMsg(
+          `Syncing profiles... ${status.processed}/${status.total} (${status.updated} updated, ${status.failed} failed)`
+        );
+        return false;
+      }
+
+      setSyncMsg(status.message || 'Profile sync finished');
+      setSyncingProfiles(false);
       await loadMeta();
+      return true;
+    };
+
+    try {
+      await api.scrapeProfiles(0);
+      const finished = await pollStatus();
+      if (finished) return;
+
+      await new Promise((resolve) => {
+        const interval = setInterval(async () => {
+          try {
+            const done = await pollStatus();
+            if (done) {
+              clearInterval(interval);
+              resolve();
+            }
+          } catch (err) {
+            clearInterval(interval);
+            setSyncMsg(err.message);
+            setSyncingProfiles(false);
+            resolve();
+          }
+        }, 2000);
+      });
     } catch (err) {
       setSyncMsg(err.message);
-    } finally {
       setSyncingProfiles(false);
     }
   };
@@ -219,7 +251,7 @@ export default function HomePage() {
             onClick={handleSyncProfiles}
             disabled={syncing || syncingProfiles}
           >
-            {syncingProfiles ? 'Syncing profiles...' : '↻ Sync UCP Profiles (25)'}
+            {syncingProfiles ? 'Syncing all profiles...' : '↻ Sync All UCP Profiles'}
           </button>
         </div>
 

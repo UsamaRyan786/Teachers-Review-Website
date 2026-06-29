@@ -66,14 +66,20 @@ export const api = {
     return json;
   },
 
-  async scrapeProfiles(limit = 25) {
+  async scrapeProfiles(limit = 0) {
     const res = await fetch(`${API_BASE}/teachers/scrape-profiles`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ limit, onlyMissing: true }),
+      body: JSON.stringify({ limit, onlyMissing: true, background: true }),
     });
     const json = await res.json();
     if (!res.ok) throw new Error(json.message || 'Profile sync failed');
     return json;
+  },
+
+  async getProfileSyncStatus() {
+    const res = await fetch(`${API_BASE}/teachers/scrape-profiles/status`);
+    if (!res.ok) throw new Error('Failed to fetch sync status');
+    return res.json();
   },
 };

@@ -9,9 +9,8 @@ const run = async () => {
     console.log('Importing full teacher profiles from UCP (this may take several minutes)...\n');
 
     const result = await enrichAllTeacherProfiles({
-      delayMs: 300,
       onProgress: ({ current, total, updated, failed, name }) => {
-        if (current % 10 === 0 || current === total) {
+        if (current % 25 === 0 || current === total) {
           console.log(`  [${current}/${total}] updated: ${updated}, failed: ${failed} — latest: ${name}`);
         }
       },
