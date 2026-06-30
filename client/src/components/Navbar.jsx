@@ -9,6 +9,10 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
 
+  const isHome = location.pathname === '/';
+  const isReviews =
+    location.pathname === '/reviews' || location.pathname.startsWith('/teacher/');
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
     window.addEventListener('scroll', onScroll, { passive: true });
@@ -62,8 +66,11 @@ export default function Navbar() {
           </button>
 
           <div className={`nav-links ${menuOpen ? 'nav-open' : ''}`}>
-            <Link to="/" className={location.pathname === '/' ? 'active' : ''}>
-              Faculty Directory
+            <Link to="/" className={isHome ? 'active' : ''}>
+              Home
+            </Link>
+            <Link to="/reviews" className={isReviews ? 'active' : ''}>
+              Teacher Reviews
             </Link>
             <a href="https://ucp.edu.pk" target="_blank" rel="noopener noreferrer">
               ucp.edu.pk

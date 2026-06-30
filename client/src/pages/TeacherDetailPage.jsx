@@ -73,13 +73,13 @@ export default function TeacherDetailPage() {
       <>
         <PageBanner title="Faculty Profile" breadcrumbs={[{ label: 'Home', to: '/' }, { label: 'Not found' }]} />
         <div className="container detail-page">
-          <Link to="/" className="back-link">
+          <Link to="/reviews" className="back-link">
             ← Back to faculty directory
           </Link>
           <div className="empty-state empty-state-animate">
             <h3>Teacher not found</h3>
             <p>{error || 'This teacher may have been removed.'}</p>
-            <Link to="/" className="btn btn-primary" style={{ marginTop: '1rem' }}>
+            <Link to="/reviews" className="btn btn-primary" style={{ marginTop: '1rem' }}>
               Browse all teachers
             </Link>
           </div>
@@ -94,13 +94,13 @@ export default function TeacherDetailPage() {
         title={teacher.name}
         breadcrumbs={[
           { label: 'Home', to: '/' },
-          { label: 'Faculty Directory', to: '/' },
+          { label: 'Teacher Reviews', to: '/reviews' },
           { label: teacher.name },
         ]}
       />
 
       <div className="container detail-page">
-        <Link to="/" className="back-link">
+        <Link to="/reviews" className="back-link">
           ← Back to faculty directory
         </Link>
 

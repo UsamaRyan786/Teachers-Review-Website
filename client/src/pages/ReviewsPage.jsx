@@ -6,9 +6,9 @@ import SkeletonCard from '../components/SkeletonCard';
 import PageBanner from '../components/PageBanner';
 import { groupTeachersByDepartment, groupTeachersByFaculty } from '../utils/groupTeachers';
 import usePageTitle from '../hooks/usePageTitle';
-import { SITE_NAME, SITE_PURPOSE, SITE_TAGLINE } from '../config/site';
+import { SITE_NAME, SITE_TAGLINE } from '../config/site';
 
-export default function HomePage() {
+export default function ReviewsPage() {
   const [teachers, setTeachers] = useState([]);
   const [faculties, setFaculties] = useState([]);
   const [departments, setDepartments] = useState([]);
@@ -146,19 +146,18 @@ export default function HomePage() {
     return groupTeachersByFaculty(teachers).map(([title, items]) => ({ title, teachers: items }));
   }, [teachers, filters.search, filters.faculty, filters.department]);
 
-  const pageTitle = filters.faculty || 'Faculty Directory';
-  const isHome = !filters.faculty && !filters.search && !filters.department;
+  const pageTitle = filters.faculty || SITE_NAME;
 
-  usePageTitle(isHome ? '' : pageTitle);
+  usePageTitle(pageTitle);
 
   return (
     <>
       <PageBanner
-        title={isHome ? SITE_NAME : pageTitle}
-        subtitle={isHome ? `${SITE_TAGLINE}. ${SITE_PURPOSE}` : SITE_TAGLINE}
+        title={pageTitle}
+        subtitle={SITE_TAGLINE}
         breadcrumbs={[
           { label: 'Home', to: '/' },
-          { label: 'Teacher Reviews', to: '/' },
+          { label: 'Teacher Reviews' },
           ...(filters.faculty ? [{ label: pageTitle }] : []),
         ]}
       />
